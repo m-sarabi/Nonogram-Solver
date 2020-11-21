@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+import math
 
 
 # Checks if the filled cell is within the row/column constraints
@@ -153,33 +154,51 @@ def overlap_col(tab):
 
 
 def generate_table():
-    global rows, cols, colcon_entry, rowcon_entry, solve_button, tab_labels, frame_table
+    global rows, cols, colcon_entry, rowcon_entry, solve_button, tab_labels, frame_table, tab_frames, colentry_frm, \
+        rowentry_frm
     rows = row_entry.get()
     cols = col_entry.get()
     if not rows or not cols:
         return
     rows = int(rows)
     cols = int(cols)
+    table_h = (rows + 1) * size + 2 * rows
+    padh = max((720 - math.floor(table_h * 1.2)) * 0.35, 0)
     tab_labels = []
+    tab_frames = []
     colcon_entry = []
     rowcon_entry = []
+    colentry_frm = []
+    rowentry_frm = []
     frame_table = tk.Frame(main, bg='lightgray')
-    frame_table.grid(row=1, column=0, padx=10)
+    frame_table.grid(row=1, column=0, padx=10, pady=(padh, 0))
     for i in range(cols):
-        colcon_entry.append(tk.Entry(frame_table, width=5))
-        colcon_entry[i].grid(row=0, column=i + 1, ipady=8)
+        colentry_frm.append(tk.Frame(frame_table, width=size, height=size))
+        colentry_frm[i].pack_propagate(0)
+        colentry_frm[i].grid(row=0, column=i + 1)
+        colcon_entry.append(tk.Entry(colentry_frm[i]))
+        colcon_entry[i].pack(fill=tk.BOTH, expand=1)
     for i in range(rows):
-        rowcon_entry.append(tk.Entry(frame_table, width=5))
-        rowcon_entry[i].grid(row=i + 1, column=0, ipady=8)
+        rowentry_frm.append(tk.Frame(frame_table, width=size, height=size))
+        rowentry_frm[i].pack_propagate(0)
+        rowentry_frm[i].grid(row=i + 1, column=0)
+        rowcon_entry.append(tk.Entry(rowentry_frm[i]))
+        rowcon_entry[i].pack(fill=tk.BOTH, expand=1)
     for i in range(rows):
         tab_labels.append([])
+        tab_frames.append([])
         for j in range(cols):
-            tab_labels[i].append(tk.Label(frame_table, width=4, height=2))
-            tab_labels[i][j].grid(row=i + 1, column=j + 1, padx=1, pady=1)
+            tab_frames[i].append(tk.Frame(frame_table, width=size, height=size))
+            tab_frames[i][j].pack_propagate(0)
+            tab_frames[i][j].grid(row=i + 1, column=j + 1, padx=1, pady=1)
+            tab_labels[i].append(tk.Label(tab_frames[i][j]))
+            tab_labels[i][j].pack(fill=tk.BOTH, expand=1)
     solve_button["state"] = tk.NORMAL
     new_btn['state'] = tk.NORMAL
     build_button['state'] = tk.DISABLED
-
+    size_plus_frame.tkraise()
+    size_minus_frame.tkraise()
+    
 
 def solve_function():
     global row_con, col_con
@@ -228,20 +247,66 @@ def solve_function():
 
 
 def new_board():
+    global colentry_frm, rowentry_frm, tab_frames
     frame_table.destroy()
     solve_button["state"] = tk.DISABLED
     new_btn['state'] = tk.DISABLED
     build_button['state'] = tk.NORMAL
+    colentry_frm = []
+    rowentry_frm = []
+    tab_frames = []
+
+
+def sizeplus():
+    global size, size_label
+
+    if size < 100:
+        size += 5
+        size_label.config(text='Size: ' + str(size // 5))
+        if colentry_frm:
+            for i in range(len(colentry_frm)):
+                colentry_frm[i].config(width=size, height=size)
+        if rowentry_frm:
+            for i in range(len(rowentry_frm)):
+                rowentry_frm[i].config(width=size, height=size)
+        if tab_frames:
+            for i in range(rows):
+                for j in range(cols):
+                    tab_frames[i][j].config(width=size, height=size)
+    print(frame_menu.winfo_reqheight())
+
+
+def sizeminus():
+    global size, size_label
+    if size > 10:
+        size -= 5
+        size_label.config(text='Size: ' + str(size // 5))
+        if colentry_frm:
+            for i in range(len(colentry_frm)):
+                colentry_frm[i].config(width=size, height=size)
+        if rowentry_frm:
+            for i in range(len(rowentry_frm)):
+                rowentry_frm[i].config(width=size, height=size)
+        if tab_frames:
+            for i in range(rows):
+                for j in range(cols):
+                    tab_frames[i][j].config(width=size, height=size)
 
 
 rowcon_entry = []
 colcon_entry = []
+colentry_frm = []
+rowentry_frm = []
+
 row_con = []
 col_con = []
 tab_labels = []
+tab_frames = []
+size = 20
 
 main = tk.Tk()
-# main.grid_rowconfigure(0, weight=1)
+main.geometry('760x760+10+18')
+
 main.grid_columnconfigure(0, weight=1)
 
 main.title('Nonogram Solver')
@@ -278,7 +343,22 @@ tk.ttk.Separator(frame_menu, orient=tk.VERTICAL).grid(row=0, column=7, rowspan=2
 solve_button = tk.Button(frame_menu, text='Solve', command=solve_function, state=tk.DISABLED, width=5)
 solve_button.grid(row=0, column=8, padx=5, pady=5, rowspan=2)
 
+tk.ttk.Separator(frame_menu, orient=tk.VERTICAL).grid(row=0, column=9, rowspan=2, sticky='ns', padx=(15, 10))
+
+size_label = tk.Label(frame_menu, text='Size: ' + str(size // 5))
+size_label.grid(row=0, column=10, padx=3, pady=5)
+
+size_plus_frame = tk.Frame(main, height=27, width=35)
+size_plus_frame.place(x=720, y=680)
+size_plus_frame.pack_propagate(0)
+size_minus_frame = tk.Frame(main, height=27, width=35)
+size_minus_frame.place(x=720, y=720)
+size_minus_frame.pack_propagate(0)
+size_plus = tk.Button(size_plus_frame, font=('Courier', 14), text='+', command=sizeplus, bg='#555555', fg='white')
+size_minus = tk.Button(size_minus_frame, font=('Courier', 14), text='-', command=sizeminus, bg='#555555', fg='white')
+
+size_plus.pack(fill=tk.BOTH, expand=1)
+size_minus.pack(fill=tk.BOTH, expand=1)
 
 main.resizable(0, 0)
-main.geometry('760x700')
 main.mainloop()
