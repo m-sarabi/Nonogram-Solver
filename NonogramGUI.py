@@ -155,23 +155,38 @@ def overlap_col(tab):
 
 def generate_table():
     global rows, cols, colcon_entry, rowcon_entry, solve_button, tab_labels, frame_table, tab_frames, colentry_frm, \
-        rowentry_frm
+        rowentry_frm, canvas, scroll, xcroll
     rows = row_entry.get()
     cols = col_entry.get()
     if not rows or not cols:
         return
     rows = int(rows)
     cols = int(cols)
+    table_w = (cols + 1) * size + 2 * cols
     table_h = (rows + 1) * size + 2 * rows
-    padh = max((720 - math.floor(table_h * 1.2)) * 0.35, 0)
+    padh = max((720 - math.floor(table_h * 1.2)) * 0.47, 0)
+    padw = max((720 - math.floor(table_w * 1.2)) * 0.5, 0)
     tab_labels = []
     tab_frames = []
     colcon_entry = []
     rowcon_entry = []
     colentry_frm = []
     rowentry_frm = []
-    frame_table = tk.Frame(main, bg='lightgray')
-    frame_table.grid(row=1, column=0, padx=10, pady=(padh, 0))
+
+    canvas = tk.Canvas(frame_scroll, width=min(table_w, 700), height=min(680, table_h), bg='#555555')
+    frame_table = tk.Frame(canvas, bg='darkgray')
+    scroll = tk.Scrollbar(frame_scroll, command=canvas.yview)
+    xcroll = tk.Scrollbar(frame_scroll, command=canvas.xview, orient='horizontal')
+    frame_table.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+    
+    canvas.create_window((0, 0), window=frame_table, anchor='nw')
+    canvas.configure(yscrollcommand=scroll.set)
+    canvas.configure(xscrollcommand=xcroll.set)
+    canvas.place(x=padw, y=padh)
+    scroll.pack(side=tk.RIGHT, fill='y')
+    xcroll.pack(side=tk.BOTTOM, fill='x')
+
+    # frame_table.pack(pady=(padh, 0))
     for i in range(cols):
         colentry_frm.append(tk.Frame(frame_table, width=size, height=size))
         colentry_frm[i].pack_propagate(0)
@@ -247,8 +262,11 @@ def solve_function():
 
 
 def new_board():
-    global colentry_frm, rowentry_frm, tab_frames
+    global colentry_frm, rowentry_frm, tab_frames, canvas
     frame_table.destroy()
+    canvas.destroy()
+    scroll.destroy()
+    xcroll.destroy()
     solve_button["state"] = tk.DISABLED
     new_btn['state'] = tk.DISABLED
     build_button['state'] = tk.NORMAL
@@ -258,7 +276,7 @@ def new_board():
 
 
 def sizeplus():
-    global size, size_label
+    global size, size_label, scroll, xcroll
 
     if size < 100:
         size += 5
@@ -273,7 +291,14 @@ def sizeplus():
             for i in range(rows):
                 for j in range(cols):
                     tab_frames[i][j].config(width=size, height=size)
-    print(frame_menu.winfo_reqheight())
+        if canvas:
+            table_w = (cols + 1) * size + 2 * cols
+            table_h = (rows + 1) * size + 2 * rows
+            padh = max((720 - math.floor(table_h * 1.2)) * 0.47, 0)
+            padw = max((720 - math.floor(table_w * 1.2)) * 0.5, 0)
+            canvas.configure(width=min(table_w, 700), height=min(680, table_h))
+            canvas.place(x=padw, y=padh)
+
 
 
 def sizeminus():
@@ -291,6 +316,13 @@ def sizeminus():
             for i in range(rows):
                 for j in range(cols):
                     tab_frames[i][j].config(width=size, height=size)
+        if canvas:
+            table_w = (cols + 1) * size + 2 * cols
+            table_h = (rows + 1) * size + 2 * rows
+            padh = max((720 - math.floor(table_h * 1.2)) * 0.47, 0)
+            padw = max((720 - math.floor(table_w * 1.2)) * 0.5, 0)
+            canvas.configure(width=min(table_w, 700), height=min(680, table_h))
+            canvas.place(x=padw, y=padh)
 
 
 rowcon_entry = []
@@ -313,8 +345,14 @@ main.title('Nonogram Solver')
 main.config(bg='alice blue')
 frame_menu = tk.Frame(main, bg='MistyRose', highlightbackground='green', highlightthickness=1)
 frame_menu.grid(row=0, column=0, padx=5, pady=5, sticky='ew')
+frame_scroll = tk.Frame(main, width=750, height=700, bg='alice blue')
+frame_scroll.pack_propagate(0)
+frame_scroll.grid(row=1, column=0, sticky='nsew', padx=5, pady=5)
 
 frame_table = tk.Frame(main, bg='lightgray')
+canvas = tk.Canvas(frame_scroll)
+scroll = tk.Scrollbar(frame_scroll)
+xcroll = tk.Scrollbar(frame_scroll)
 # frame_table.grid(row=0, column=1, padx=10)
 
 rows_frame = tk.Frame(frame_menu, bg='MistyRose')
